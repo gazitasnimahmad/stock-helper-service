@@ -6,10 +6,14 @@ import com.opencsv.exceptions.CsvException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import stockhelperservice.entities.MasterRatio;
+import stockhelperservice.entities.MasterStock;
 import stockhelperservice.entities.StockRatioAndFactor;
 import stockhelperservice.model.ErrorInfo;
 import stockhelperservice.model.StockFileMap;
 import stockhelperservice.model.StockMainResponse;
+import stockhelperservice.repositories.MasterRatioRepository;
+import stockhelperservice.repositories.MasterStockRepository;
 import stockhelperservice.repositories.StockRatioRepository;
 import stockhelperservice.utility.CommonUtility;
 
@@ -27,15 +31,22 @@ import static java.util.function.Predicate.not;
 
 @Service
 public class StockHelperServiceImpl implements StockHelperService {
+    @Autowired
     private StockRatioRepository stockRatioRepository;
 
     @Autowired
-    private CommonUtility commonUtility;
+    private MasterRatioRepository masterRatioRepository;
 
     @Autowired
-    public void setStockRatioRepository(StockRatioRepository stockRatioRepository) {
-        this.stockRatioRepository = stockRatioRepository;
-    }
+    private MasterStockRepository MasterStockRepository;
+
+    @Autowired
+    private CommonUtility commonUtility;
+//
+//    @Autowired
+//    public void setStockRatioRepository(StockRatioRepository stockRatioRepository) {
+//        this.stockRatioRepository = stockRatioRepository;
+//    }
 
     @Override
     public StockMainResponse processFile(MultipartFile file) throws IOException, CsvException {
@@ -62,6 +73,8 @@ public class StockHelperServiceImpl implements StockHelperService {
             Optional<StockRatioAndFactor> stockAvailable = stockRatioRepository.findByDate(date);
             if(stockAvailable.isEmpty()){
                 savingDataToStockRatioDB(stockList,stockResponse);
+                savingDataToMasterRatio(stockResponse);
+//                savingDataToMasterStockTable(stockResponse);
             }
 
         } catch (Exception ex) {
@@ -73,6 +86,27 @@ public class StockHelperServiceImpl implements StockHelperService {
         }
         stockMainResponse.setStockFileMap(stockResponse);
         return stockMainResponse;
+    }
+
+//    private void savingDataToMasterStockTable(List<StockRatioAndFactor> stockResponse) {
+//        for(StockRatioAndFactor stock : stockResponse){
+//            MasterStock masterStock = new MasterStock();
+//            masterStock.setDate(stock.getDate());
+//            masterStock.setSymbol(stock.getSymbol());
+//            masterStock.setSum(stock.getSum());
+//            masterStock.setGoodToGo(stock.getGoodToGo());
+//            MasterStockRepository.save(masterStock);
+//        }
+//    }
+
+    private void savingDataToMasterRatio(List<StockRatioAndFactor> stockResponse) {
+        for(StockRatioAndFactor stock : stockResponse){
+            MasterRatio masterRatio = new MasterRatio();
+            masterRatio.setDate(stock.getDate());
+            masterRatio.setSymbol(stock.getSymbol());
+            masterRatio.setDq_by_nt(stock.getDq_by_nt());
+            masterRatioRepository.save(masterRatio);
+        }
     }
 
     private void savingDataToStockRatioDB(List<StockFileMap> stockList, List<StockRatioAndFactor> stockResponse) {
