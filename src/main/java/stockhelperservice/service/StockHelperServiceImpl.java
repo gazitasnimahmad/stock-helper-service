@@ -42,11 +42,6 @@ public class StockHelperServiceImpl implements StockHelperService {
 
     @Autowired
     private CommonUtility commonUtility;
-//
-//    @Autowired
-//    public void setStockRatioRepository(StockRatioRepository stockRatioRepository) {
-//        this.stockRatioRepository = stockRatioRepository;
-//    }
 
     @Override
     public StockMainResponse processFile(MultipartFile file) throws IOException, CsvException {
@@ -88,16 +83,45 @@ public class StockHelperServiceImpl implements StockHelperService {
         return stockMainResponse;
     }
 
-//    private void savingDataToMasterStockTable(List<StockRatioAndFactor> stockResponse) {
-//        for(StockRatioAndFactor stock : stockResponse){
-//            MasterStock masterStock = new MasterStock();
-//            masterStock.setDate(stock.getDate());
-//            masterStock.setSymbol(stock.getSymbol());
-//            masterStock.setSum(stock.getSum());
-//            masterStock.setGoodToGo(stock.getGoodToGo());
-//            MasterStockRepository.save(masterStock);
-//        }
-//    }
+    private void savingDataToMasterStockTable(List<StockRatioAndFactor> stockResponse) {
+        for(StockRatioAndFactor stock : stockResponse){
+            Double avgOfTwoDays = avgOfTwoDays(stock.getSymbol());
+            Double avgOfTenDays = avgOfTenDays(stock.getSymbol());
+            MasterStock masterStock = new MasterStock();
+            masterStock.setDate(stock.getDate());
+            masterStock.setSymbol(stock.getSymbol());
+            Double sum = findSumOfThreeMonthRatio(stock.getSymbol()).get();
+            masterStock.setSum(sum);
+            masterStock.setGoodToGo((avgOfTwoDays > avgOfTenDays) ? "yes" : "no");
+            MasterStockRepository.save(masterStock);
+        }
+    }
+
+    private Optional<Double> findSumOfThreeMonthRatio(String symbol) {
+        return masterRatioRepository.findSumOfThreeMonthRatio(symbol);
+    }
+
+    private Double avgOfTenDays(String symbol) {
+        Double sum = 0.00;
+        Optional<List<MasterRatio>> lastTwoDaysRatio = masterRatioRepository.findLastTenDaysRatio(symbol);
+        if(lastTwoDaysRatio.isPresent()){
+            for (MasterRatio ratio : lastTwoDaysRatio.get()){
+                sum = ratio.getDq_by_nt() != null ? sum + ratio.getDq_by_nt() : sum + 0.00;
+            }
+        }
+        return sum/5;
+    }
+
+    private Double avgOfTwoDays(String symbol) {
+        Double sum = 0.00;
+        Optional<List<MasterRatio>> lastTwoDaysRatio = masterRatioRepository.findLastTwoDaysRatio(symbol);
+        if(lastTwoDaysRatio.isPresent()){
+            for (MasterRatio ratio : lastTwoDaysRatio.get()){
+                sum = ratio.getDq_by_nt() != null ? sum + ratio.getDq_by_nt() : sum + 0.00;
+            }
+        }
+        return sum/2;
+    }
 
     private void savingDataToMasterRatio(List<StockRatioAndFactor> stockResponse) {
         for(StockRatioAndFactor stock : stockResponse){
