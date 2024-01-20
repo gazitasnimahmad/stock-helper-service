@@ -28,4 +28,5 @@ public class StockRatioAndFactor {
     @Column(name ="dq_by_nt", nullable = true)
     private Double dq_by_nt;
 
+
 }

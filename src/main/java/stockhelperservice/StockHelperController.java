@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import stockhelperservice.entities.StockRatioAndFactor;
+import stockhelperservice.model.MasterResponse;
 import stockhelperservice.model.StockFileMap;
 import stockhelperservice.model.StockMainResponse;
 import stockhelperservice.repositories.StockRatioRepository;
@@ -22,9 +23,6 @@ public class StockHelperController {
     @Autowired
     private StockHelperService stockHelperService;
 
-    @Autowired
-    private StockRatioRepository stockRatioRepository;
-
 
     @PostMapping("/upload")
     public StockMainResponse handleFileUpload(@RequestParam("file") MultipartFile file) throws IOException, CsvException {
@@ -32,11 +30,9 @@ public class StockHelperController {
 //        return ResponseEntity.ok("File uploaded and processed successfully!");
     }
 
-    @GetMapping("/getRatio")
-    public Optional<StockRatioAndFactor> getRatio(@RequestParam("date") String date, @RequestParam("symbol") String symbol) throws IOException, CsvException {
-//        List<StockFileMap> stockData= stockHelperService.processFile(file);
-//        return stockData;
+    @GetMapping("/insights")
+    public MasterResponse getInsights(@RequestParam("date") String date, @RequestParam("symbol") String symbol) throws IOException, CsvException {
 //        return ResponseEntity.ok("File uploaded and processed successfully!");
-        return stockRatioRepository.findAllNtByQt(symbol, date);
+        return stockHelperService.getInsights(date, symbol);
     }
 }

@@ -10,6 +10,7 @@ import stockhelperservice.entities.MasterRatio;
 import stockhelperservice.entities.MasterStock;
 import stockhelperservice.entities.StockRatioAndFactor;
 import stockhelperservice.model.ErrorInfo;
+import stockhelperservice.model.MasterResponse;
 import stockhelperservice.model.StockFileMap;
 import stockhelperservice.model.StockMainResponse;
 import stockhelperservice.repositories.MasterRatioRepository;
@@ -69,7 +70,10 @@ public class StockHelperServiceImpl implements StockHelperService {
             if(stockAvailable.isEmpty()){
                 savingDataToStockRatioDB(stockList,stockResponse);
                 savingDataToMasterRatio(stockResponse);
-//                savingDataToMasterStockTable(stockResponse);
+            }
+            else {
+                stockMainResponse.setErrorInfo(new ErrorInfo("Metrics Already available in the database for this date: " + date+". Please try again for other dates.",
+                        "Metrics already stored in the database."));
             }
 
         } catch (Exception ex) {
@@ -83,44 +87,20 @@ public class StockHelperServiceImpl implements StockHelperService {
         return stockMainResponse;
     }
 
-    private void savingDataToMasterStockTable(List<StockRatioAndFactor> stockResponse) {
-        for(StockRatioAndFactor stock : stockResponse){
-            Double avgOfTwoDays = avgOfTwoDays(stock.getSymbol());
-            Double avgOfTenDays = avgOfTenDays(stock.getSymbol());
+
+    private MasterStock savingDataToMasterStockTable(String symbol) {
+            Double avgOfTwoDays = commonUtility.avgOfTwoDays(symbol);
+            Double avgOfTenDays = commonUtility.avgOfTenDays(symbol);
             MasterStock masterStock = new MasterStock();
-            masterStock.setDate(stock.getDate());
-            masterStock.setSymbol(stock.getSymbol());
-            Double sum = findSumOfThreeMonthRatio(stock.getSymbol()).get();
-            masterStock.setSum(sum);
+            masterStock.setSymbol(symbol);
+            Optional<Double> sum = commonUtility.findSumOfThreeMonthRatio(symbol);
+            if(sum.isPresent())
+                masterStock.setSum(sum.get());
+            else
+                masterStock.setSum(0.00);
             masterStock.setGoodToGo((avgOfTwoDays > avgOfTenDays) ? "yes" : "no");
             MasterStockRepository.save(masterStock);
-        }
-    }
-
-    private Optional<Double> findSumOfThreeMonthRatio(String symbol) {
-        return masterRatioRepository.findSumOfThreeMonthRatio(symbol);
-    }
-
-    private Double avgOfTenDays(String symbol) {
-        Double sum = 0.00;
-        Optional<List<MasterRatio>> lastTwoDaysRatio = masterRatioRepository.findLastTenDaysRatio(symbol);
-        if(lastTwoDaysRatio.isPresent()){
-            for (MasterRatio ratio : lastTwoDaysRatio.get()){
-                sum = ratio.getDq_by_nt() != null ? sum + ratio.getDq_by_nt() : sum + 0.00;
-            }
-        }
-        return sum/5;
-    }
-
-    private Double avgOfTwoDays(String symbol) {
-        Double sum = 0.00;
-        Optional<List<MasterRatio>> lastTwoDaysRatio = masterRatioRepository.findLastTwoDaysRatio(symbol);
-        if(lastTwoDaysRatio.isPresent()){
-            for (MasterRatio ratio : lastTwoDaysRatio.get()){
-                sum = ratio.getDq_by_nt() != null ? sum + ratio.getDq_by_nt() : sum + 0.00;
-            }
-        }
-        return sum/2;
+            return masterStock;
     }
 
     private void savingDataToMasterRatio(List<StockRatioAndFactor> stockResponse) {
@@ -151,5 +131,20 @@ public class StockHelperServiceImpl implements StockHelperService {
             stockRatioRepository.save(stockData);
             stockResponse.add(stockData);
         }
+    }
+
+    @Override
+    public MasterResponse getInsights(String date, String symbol) {
+        MasterResponse masterResponse = new MasterResponse();
+        masterResponse.setMasterStock(savingDataToMasterStockTable(symbol));
+        Optional<List<MasterRatio>> masterRatio = masterRatioRepository.getInsightsForSymbol(symbol);
+        if(masterRatio.isPresent())
+            masterResponse.setMasterRatios(masterRatio.get());
+
+        Optional<StockRatioAndFactor> stockRatioAndFactor = stockRatioRepository.getStock(date, symbol);
+        if(stockRatioAndFactor.isPresent())
+            masterResponse.setStockRatioAndFactor(stockRatioAndFactor.get());
+
+        return masterResponse;
     }
 }

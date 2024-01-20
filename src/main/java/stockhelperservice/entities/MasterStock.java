@@ -13,8 +13,6 @@ public class MasterStock {
     private int id;
     @Column(name ="symbol", nullable = false)
     private String symbol;
-    @Column(name ="date", nullable = false)
-    private String date;
     @Column(name ="mcap", nullable = true)
     private String mCap;
     @Column(name ="capital_group", nullable = true)
