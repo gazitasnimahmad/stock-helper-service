@@ -134,17 +134,25 @@ public class StockHelperServiceImpl implements StockHelperService {
     }
 
     @Override
-    public MasterResponse getInsights(String date, String symbol) {
+    public MasterResponse getInsights(String symbol) {
         MasterResponse masterResponse = new MasterResponse();
-        masterResponse.setMasterStock(savingDataToMasterStockTable(symbol));
-        Optional<List<MasterRatio>> masterRatio = masterRatioRepository.getInsightsForSymbol(symbol);
-        if(masterRatio.isPresent())
-            masterResponse.setMasterRatios(masterRatio.get());
+        try {
+            masterResponse.setMasterStock(savingDataToMasterStockTable(symbol));
+            Optional<List<MasterRatio>> masterRatio = masterRatioRepository.getInsightsForSymbol(symbol);
+            if(masterRatio.isPresent())
+                masterResponse.setMasterRatios(masterRatio.get());
 
-        Optional<StockRatioAndFactor> stockRatioAndFactor = stockRatioRepository.getStock(date, symbol);
-        if(stockRatioAndFactor.isPresent())
-            masterResponse.setStockRatioAndFactor(stockRatioAndFactor.get());
+            Optional<List<StockRatioAndFactor>> stockRatioAndFactor = stockRatioRepository.getStock(symbol);
+            if(stockRatioAndFactor.isPresent())
+                masterResponse.setStockRatioAndFactor(stockRatioAndFactor.get());
 
+        } catch (Exception ex){
+            ErrorInfo errorInfo = new ErrorInfo();
+            errorInfo.setErrorMessage(ex.getMessage());
+            errorInfo.setErrorDescription(ex.getCause().toString());
+            masterResponse.setErrorInfo(errorInfo);
+            ex.printStackTrace();
+        }
         return masterResponse;
     }
 }

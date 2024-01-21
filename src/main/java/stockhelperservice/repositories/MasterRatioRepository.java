@@ -20,6 +20,6 @@ public interface MasterRatioRepository extends JpaRepository<MasterRatio, Intege
     @Query(value = "SELECT SUM(dq_by_nt) AS total_sum FROM master_dq_nt_table WHERE symbol = ?1", nativeQuery = true)
     Optional<Double> findSumOfThreeMonthRatio(String symbol);
 
-    @Query(value = "SELECT * FROM master_dq_nt_table WHERE symbol = ?1 ORDER BY date DESC", nativeQuery = true)
+    @Query(value = "SELECT * FROM master_dq_nt_table WHERE symbol = ?1 ORDER BY date ASC", nativeQuery = true)
     Optional<List<MasterRatio>> getInsightsForSymbol(String symbol);
 }

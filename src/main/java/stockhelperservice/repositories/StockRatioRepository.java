@@ -18,6 +18,6 @@ public interface StockRatioRepository extends JpaRepository<StockRatioAndFactor,
     @Query(value = "select * from stock_Ratio_and_factor where date = ?1 LIMIT 1", nativeQuery = true)
     Optional<StockRatioAndFactor> findByDate(String date);
 
-    @Query(value = "select * from stock_Ratio_and_factor where date = ?1 and symbol = ?2", nativeQuery = true)
-    Optional<StockRatioAndFactor> getStock(String date, String symbol);
+    @Query(value = "select * from stock_Ratio_and_factor where symbol = :symbol ORDER BY date DESC", nativeQuery = true)
+    Optional<List<StockRatioAndFactor>> getStock(@Param("symbol") String symbol);
 }

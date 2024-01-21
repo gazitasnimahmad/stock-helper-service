@@ -9,5 +9,5 @@ import java.io.IOException;
 
 public interface StockHelperService {
     StockMainResponse processFile(MultipartFile file) throws IOException, CsvException;
-    MasterResponse getInsights(String date, String symbol);
+    MasterResponse getInsights(String symbol);
 }
