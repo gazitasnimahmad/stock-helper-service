@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "stock_ratio_and_factor_new")
+@Table(name = "stock_ratio_and_factor")
 public class StockRatioAndFactor {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
