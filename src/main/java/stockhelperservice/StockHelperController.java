@@ -33,6 +33,6 @@ public class StockHelperController {
     @GetMapping("/insights")
     public MasterResponse getInsights(@RequestParam("symbol") String symbol) throws IOException, CsvException {
 //        return ResponseEntity.ok("File uploaded and processed successfully!");
-        return stockHelperService.getInsights(symbol);
+        return stockHelperService.getInsights(symbol.toUpperCase());
     }
 }
