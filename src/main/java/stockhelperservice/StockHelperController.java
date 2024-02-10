@@ -35,4 +35,10 @@ public class StockHelperController {
 //        return ResponseEntity.ok("File uploaded and processed successfully!");
         return stockHelperService.getInsights(symbol.toUpperCase());
     }
+
+    @GetMapping("/hello")
+    public String getHello()  {
+//        return ResponseEntity.ok("File uploaded and processed successfully!");
+        return "hello World";
+    }
 }
