@@ -3,6 +3,8 @@ package stockhelperservice.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 @Data
 @Entity
 @Table(name = "MASTER_DQ_NT_TABLE")
@@ -14,7 +16,7 @@ public class MasterRatio {
     @Column(name ="symbol", nullable = true)
     private String symbol;
     @Column(name ="date", nullable = false)
-    private String date;
+    private LocalDate date;
     @Column(name ="dq_by_nt", nullable = true)
     private Double dq_by_nt;
 }

@@ -2,6 +2,7 @@ package stockhelperservice.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.time.LocalDate;
 
 @Data
 @Entity
@@ -14,7 +15,7 @@ public class StockRatioAndFactor {
     @Column(name ="symbol", nullable = true)
     private String symbol;
     @Column(name ="date", nullable = false)
-    private String date;
+    private LocalDate date;
     @Column(name ="avg_close_price", nullable = true)
     private String avg_close_price;
     @Column(name ="avg_open_price", nullable = true)
