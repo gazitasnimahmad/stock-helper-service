@@ -61,6 +61,7 @@ public class StockHelperServiceImpl implements StockHelperService {
     private EntityManager entityManager;
 
     @Override
+    @Transactional
     public StockMainResponse processFile(MultipartFile file, LocalDateTime startingTime) throws IOException, CsvException {
         List<StockFileMap> stockList = new ArrayList<>();
         StockMainResponse stockMainResponse = new StockMainResponse();
@@ -128,7 +129,6 @@ public class StockHelperServiceImpl implements StockHelperService {
     /**
      * Batch-save master ratios created from stockResponse to reduce DB round-trips.
      */
-    @Transactional
     private void savingDataToMasterRatio(List<StockRatioAndFactor> stockResponse) {
         if (stockResponse == null || stockResponse.isEmpty()) return;
 
@@ -159,7 +159,6 @@ public class StockHelperServiceImpl implements StockHelperService {
      * Batch insert StockRatioAndFactor entities. Uses saveAll with periodic flush/clear to keep
      * the persistence context small and reduce DB round-trips.
      */
-    @Transactional
     private void savingDataToStockRatioDB(List<StockFileMap> stockList, List<StockRatioAndFactor> stockResponse) {
         if (stockList == null || stockList.isEmpty()) return;
 
