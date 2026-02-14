@@ -13,6 +13,7 @@ import stockhelperservice.repositories.StockRatioRepository;
 import stockhelperservice.service.StockHelperService;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,8 +29,9 @@ public class StockHelperController {
 
     @PostMapping("/upload")
     public StockMainResponse handleFileUpload(@RequestParam("file") MultipartFile file) throws IOException, CsvException {
-        log.info("started uploading nse data to db");
-        return stockHelperService.processFile(file);
+        LocalDateTime startingTime = LocalDateTime.now();
+        log.info("started uploading nse data to db. Current time {}", startingTime);
+        return stockHelperService.processFile(file, startingTime);
 //        return ResponseEntity.ok("File uploaded and processed successfully!");
     }
 

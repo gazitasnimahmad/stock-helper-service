@@ -6,8 +6,9 @@ import stockhelperservice.model.MasterResponse;
 import stockhelperservice.model.StockMainResponse;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 public interface StockHelperService {
-    StockMainResponse processFile(MultipartFile file) throws IOException, CsvException;
+    StockMainResponse processFile(MultipartFile file, LocalDateTime startingTime) throws IOException, CsvException;
     MasterResponse getInsights(String symbol);
 }

@@ -4,6 +4,7 @@ package stockhelperservice.service;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,19 +55,22 @@ public class StockHelperServiceImpl implements StockHelperService {
             DateTimeFormatter.ofPattern("dd-MMM-yyyy").withLocale(Locale.ENGLISH); // matches '01-Jan-2026'
 
     @Override
-    public StockMainResponse processFile(MultipartFile file) throws IOException, CsvException {
+    @Transactional
+    public StockMainResponse processFile(MultipartFile file, LocalDateTime startingTime) throws IOException, CsvException {
         List<StockFileMap> stockList = new ArrayList<>();
         StockMainResponse stockMainResponse = new StockMainResponse();
         List<StockRatioAndFactor> stockResponse = new ArrayList<>();
         LocalDate date = null;
         try {
+            log.info("started processing nse data to db. Current time {}", LocalDateTime.now());
+
             Reader reader = new InputStreamReader(file.getInputStream());
             CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build();
             stockList = csvReader.readAll().stream().map(data ->
                             new StockFileMap(data[0], data[1], data[2], data[3], data[4], data[5], data[6],
                                     data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14]))
                     .collect(Collectors.toList());
-            log.info("ready to filter data to upload");
+            log.info("ready to filter data to upload. Current time: {}", LocalDateTime.now());
 
             stockList = stockList.stream()
                     .filter(not(item -> item.getDeliveryQnty().contains("-")))
@@ -73,17 +78,20 @@ public class StockHelperServiceImpl implements StockHelperService {
                     .filter(not(item -> item.getClosePrice().contains("-")))
                     .filter(not(item -> item.getOpenPrice().contains("-")))
                     .filter(not(item -> item.getDeliveryPer().contains("-"))).toList();
-            log.info("Filtering completed");
+            log.info("Filtering completed. Current time: {}", LocalDateTime.now());
 
             date = commonUtility.getDate(date, stockList);
             Optional<StockRatioAndFactor> stockAvailable = stockRatioRepository.findByDate(date);
             if (stockAvailable.isEmpty()) {
-                log.info("started saving data to DB:");
 
                 savingDataToStockRatioDB(stockList, stockResponse);
-                savingDataToMasterRatio(stockResponse);
-                log.info("saved nse data to DB:");
+                log.info("All NSE Data saved to Stock Ratio table");
 
+                savingDataToMasterRatio(stockResponse);
+                log.info("All NSE Data saved to Master Ratio table");
+                log.info("NSE Data uploaded successfully. Current time: {}", LocalDateTime.now());
+                long seconds = java.time.Duration.between(startingTime, LocalDateTime.now()).getSeconds();
+                log.info("Total time taken to upload data: {} seconds", seconds);
             } else {
                 stockMainResponse.setErrorInfo(new ErrorInfo("Metrics Already available in the database for this date: " + date + ". Please try again for other dates.",
                         "Metrics already stored in the database."));
@@ -114,7 +122,6 @@ public class StockHelperServiceImpl implements StockHelperService {
             masterStock.setSum(0.00);
         masterStock.setGoodToGo((avgOfTwoDays > avgOfTenDays) ? "yes" : "no");
         MasterStockRepository.save(masterStock);
-        log.info("Data uploaded for master stock table for symbol: {}", symbol);
         return masterStock;
     }
 
@@ -154,12 +161,12 @@ public class StockHelperServiceImpl implements StockHelperService {
             stockData.setDq_by_nt(Double.valueOf(decimalFormat.format(dqByNt)));
             stockData.setSum_of_trades(stock.getNumberOfTrades());
             stockRatioRepository.save(stockData);
-            log.info("Data uploaded for stock ratio table for symbol: {} and date: {}", stock.getSymbol(), stockData.getDate());
             stockResponse.add(stockData);
         }
     }
 
     @Override
+    @Transactional
     public MasterResponse getInsights(String symbol) {
         MasterResponse masterResponse = new MasterResponse();
         try {
@@ -168,10 +175,8 @@ public class StockHelperServiceImpl implements StockHelperService {
             Optional<List<MasterRatio>> masterRatio = masterRatioRepository.getInsightsForSymbol(symbol);
             if (masterRatio.isPresent())
                 masterResponse.setMasterRatios(masterRatio.get());
-            log.info("saved the ratio to master ratio table for: {}", symbol);
 
             Optional<List<StockRatioAndFactor>> stockRatioAndFactor = stockRatioRepository.getStock(symbol);
-            log.info("getting stock ratio for: {}", symbol);
 
             if (stockRatioAndFactor.isPresent())
                 masterResponse.setStockRatioAndFactor(stockRatioAndFactor.get());
