@@ -4,6 +4,7 @@ package stockhelperservice.service;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.exceptions.CsvException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 
 import static java.util.function.Predicate.not;
 
-
+@Slf4j
 @Service
 public class StockHelperServiceImpl implements StockHelperService {
     @Autowired
@@ -64,6 +65,7 @@ public class StockHelperServiceImpl implements StockHelperService {
                             new StockFileMap(data[0], data[1], data[2], data[3], data[4], data[5], data[6],
                                     data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14]))
                     .collect(Collectors.toList());
+            log.info("ready to filter data to upload");
 
             stockList = stockList.stream()
                     .filter(not(item -> item.getDeliveryQnty().contains("-")))
@@ -71,12 +73,17 @@ public class StockHelperServiceImpl implements StockHelperService {
                     .filter(not(item -> item.getClosePrice().contains("-")))
                     .filter(not(item -> item.getOpenPrice().contains("-")))
                     .filter(not(item -> item.getDeliveryPer().contains("-"))).toList();
+            log.info("Filtering completed");
 
             date = commonUtility.getDate(date, stockList);
             Optional<StockRatioAndFactor> stockAvailable = stockRatioRepository.findByDate(date);
             if (stockAvailable.isEmpty()) {
+                log.info("started saving data to DB:");
+
                 savingDataToStockRatioDB(stockList, stockResponse);
                 savingDataToMasterRatio(stockResponse);
+                log.info("saved nse data to DB:");
+
             } else {
                 stockMainResponse.setErrorInfo(new ErrorInfo("Metrics Already available in the database for this date: " + date + ". Please try again for other dates.",
                         "Metrics already stored in the database."));
@@ -87,6 +94,7 @@ public class StockHelperServiceImpl implements StockHelperService {
             errorInfo.setErrorMessage(ex.getMessage());
             errorInfo.setErrorDescription(ex.getCause() != null ? ex.getCause().toString() : ex.toString());
             stockMainResponse.setErrorInfo(errorInfo);
+            log.info("Failed to upload: {}", ex);
             ex.printStackTrace();
         }
         stockMainResponse.setStockFileMap(stockResponse);
@@ -106,6 +114,7 @@ public class StockHelperServiceImpl implements StockHelperService {
             masterStock.setSum(0.00);
         masterStock.setGoodToGo((avgOfTwoDays > avgOfTenDays) ? "yes" : "no");
         MasterStockRepository.save(masterStock);
+        log.info("Data uploaded for master stock table for symbol: {}", symbol);
         return masterStock;
     }
 
@@ -145,6 +154,7 @@ public class StockHelperServiceImpl implements StockHelperService {
             stockData.setDq_by_nt(Double.valueOf(decimalFormat.format(dqByNt)));
             stockData.setSum_of_trades(stock.getNumberOfTrades());
             stockRatioRepository.save(stockData);
+            log.info("Data uploaded for stock ratio table for symbol: {} and date: {}", stock.getSymbol(), stockData.getDate());
             stockResponse.add(stockData);
         }
     }
@@ -154,19 +164,25 @@ public class StockHelperServiceImpl implements StockHelperService {
         MasterResponse masterResponse = new MasterResponse();
         try {
             masterResponse.setMasterStock(savingDataToMasterStockTable(symbol));
+            log.info("saved data to master stock table for: {}", symbol);
             Optional<List<MasterRatio>> masterRatio = masterRatioRepository.getInsightsForSymbol(symbol);
             if (masterRatio.isPresent())
                 masterResponse.setMasterRatios(masterRatio.get());
+            log.info("saved the ratio to master ratio table for: {}", symbol);
 
             Optional<List<StockRatioAndFactor>> stockRatioAndFactor = stockRatioRepository.getStock(symbol);
+            log.info("getting stock ratio for: {}", symbol);
+
             if (stockRatioAndFactor.isPresent())
                 masterResponse.setStockRatioAndFactor(stockRatioAndFactor.get());
+            log.info("getting stock ratio and factor for: {}", symbol);
 
         } catch (Exception ex) {
             ErrorInfo errorInfo = new ErrorInfo();
             errorInfo.setErrorMessage(ex.getMessage());
             errorInfo.setErrorDescription(ex.getCause() != null ? ex.getCause().toString() : ex.toString());
             masterResponse.setErrorInfo(errorInfo);
+            log.info("failed to get insights:  {}", ex);
             ex.printStackTrace();
         }
         return masterResponse;

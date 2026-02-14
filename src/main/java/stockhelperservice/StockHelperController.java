@@ -1,6 +1,7 @@
 package stockhelperservice;
 
 import com.opencsv.exceptions.CsvException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("stockhelper")
 @CrossOrigin(origins = {"http://localhost:3000","http://localhost:8080"}, originPatterns = {"https://*.vercel.app"})
@@ -26,13 +28,14 @@ public class StockHelperController {
 
     @PostMapping("/upload")
     public StockMainResponse handleFileUpload(@RequestParam("file") MultipartFile file) throws IOException, CsvException {
+        log.info("started uploading nse data to db");
         return stockHelperService.processFile(file);
 //        return ResponseEntity.ok("File uploaded and processed successfully!");
     }
 
     @GetMapping("/insights")
     public MasterResponse getInsights(@RequestParam("symbol") String symbol) throws IOException, CsvException {
-//        return ResponseEntity.ok("File uploaded and processed successfully!");
+        log.info("started getting insights for symbol: {}", symbol);
         return stockHelperService.getInsights(symbol.toUpperCase());
     }
 
