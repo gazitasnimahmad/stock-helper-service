@@ -20,7 +20,7 @@ import java.util.Optional;
 @Slf4j
 @RestController
 @RequestMapping("stockhelper")
-@CrossOrigin(origins = {"http://localhost:3000","http://localhost:8080"}, originPatterns = {"https://*.vercel.app"})
+@CrossOrigin(origins = {"http://172.20.10.14:3000","http://172.20.10.14:8080"}, originPatterns = {"https://*.vercel.app"})
 public class StockHelperController {
 
     @Autowired
