@@ -32,7 +32,6 @@ public class StockHelperController {
         LocalDateTime startingTime = LocalDateTime.now();
         log.info("started uploading nse data to db. Current time {}", startingTime);
         return stockHelperService.processFile(file, startingTime);
-//        return ResponseEntity.ok("File uploaded and processed successfully!");
     }
 
     @GetMapping("/insights")
@@ -41,9 +40,8 @@ public class StockHelperController {
         return stockHelperService.getInsights(symbol.toUpperCase());
     }
 
-    @GetMapping("/hello")
+    @GetMapping("/health")
     public String getHello()  {
-//        return ResponseEntity.ok("File uploaded and processed successfully!");
-        return "hello World";
+        return "Health check is successful!";
     }
 }
